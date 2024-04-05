@@ -133,6 +133,10 @@ fn impl_ui_element_derive(ast: &syn::DeriveInput) -> TokenStream {
                 self.view.handle_left_click(mouse_point)
             }
 
+            fn handle_left_click_up(&self, mouse_point: Point) {
+                self.view.handle_left_click_up(mouse_point)
+            }
+
             fn handle_key_pressed(&self, key: KeyCode) {
                 self.view.handle_key_pressed(key)
             }
