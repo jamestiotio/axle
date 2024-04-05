@@ -711,9 +711,12 @@ impl ScrollView {
     }
 
     fn scroll_bar_region_contains_mouse(&self) -> bool {
-        let mouse_position = *self.cached_mouse_position.borrow();
+        self.scroll_bar_region_contains_point(*self.cached_mouse_position.borrow())
+    }
+
+    fn scroll_bar_region_contains_point(&self, point: Point) -> bool {
         // TODO(PT): Check whether we need to relocate this point to our local coordinate space
-        self.scroll_bar_content_frame().contains(mouse_position)
+        self.scroll_bar_content_frame().contains(point)
     }
 
     fn scroll_bar_content_frame(&self) -> Rect {
@@ -744,7 +747,7 @@ impl ScrollView {
         // Don't allow the user to scroll such that the entire content view is above the viewport.
         let scrollable_region = Rect::from_parts(
             content_frame.origin,
-            scrollable_region_size(self.layer.frame().size, content_frame.size),
+            self.scrollable_region_size(),
         );
         // Increase the padding so that the user doesn't have to drag to the far extrema to get to the minimal drag points
         let padding = Self::scrollbar_vertical_padding() * 3;
@@ -763,6 +766,19 @@ impl ScrollView {
 
     fn scrollbar_vertical_padding() -> isize {
         12
+    }
+
+    pub fn scrollable_region_size(&self) -> Size {
+        Self::scrollable_region_size_with_params(self.layer.frame().size, self.layer.total_content_frame().size)
+    }
+
+    fn scrollable_region_size_with_params(viewport_size: Size, content_size: Size) -> Size {
+        Size::new(
+            content_size.width,
+            // To give a good sense of interactivity, allow the user to scroll such that *half* of the
+            // bottommost content is above the viewport.
+            content_size.height - (viewport_size.height as f64 / 2.0) as isize,
+        )
     }
 }
 
@@ -879,15 +895,6 @@ impl NestedLayerSlice for ScrollView {
     }
 }
 
-fn scrollable_region_size(viewport_size: Size, content_size: Size) -> Size {
-    Size::new(
-        content_size.width,
-        // To give a good sense of interactivity, allow the user to scroll such that *half* of the
-        // bottommost content is above the viewport.
-        content_size.height - (viewport_size.height as f64 / 2.0) as isize,
-    )
-}
-
 impl UIElement for ScrollView {
     fn handle_mouse_entered(&self) {
         self.view.handle_mouse_entered()
@@ -911,7 +918,7 @@ impl UIElement for ScrollView {
 
     fn handle_left_click(&self, mouse_point: Point) {
         // If this click is bounded by the scroll bar, initiate a scroll bar drag
-        if self.scroll_bar_region_contains_mouse() {
+        if self.scroll_bar_region_contains_point(mouse_point) {
             self.cached_is_currently_dragging_scrollbar.replace(true);
         }
 
@@ -948,7 +955,7 @@ impl UIElement for ScrollView {
         // Don't allow the user to scroll such that the entire content view is above the viewport.
         let scrollable_region = Rect::from_parts(
             content_frame.origin,
-            scrollable_region_size(self.layer.frame().size, content_frame.size),
+            self.scrollable_region_size(),
         );
 
         // Would this exceed the visible content frame?
@@ -1027,7 +1034,7 @@ fn compute_scrollbar_attributes(
         )
     };
 
-    let scrollable_region_size = scrollable_region_size(viewport_size, content_size);
+    let scrollable_region_size = ScrollView::scrollable_region_size_with_params(viewport_size, content_size);
     let scrolled_proportion = scroll_position.y as f64 / scrollable_region_size.height as f64;
     let scrollbar_width = (scroll_bar_onto_size.width as f64 * 0.4) as isize;
 
