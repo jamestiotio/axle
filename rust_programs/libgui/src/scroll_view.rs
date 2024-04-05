@@ -424,7 +424,7 @@ impl ExpandingLayer {
     }
 
     fn tile_size() -> Size {
-        Size::new(100, 100)
+        Size::new(300, 300)
     }
 
     fn round_to_tile_boundary(val: isize, tile_length: isize) -> isize {

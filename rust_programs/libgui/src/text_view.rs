@@ -168,11 +168,11 @@ impl TextView {
         ch: char,
         font: &Font,
         font_size: Size,
-        onto: &Box<dyn LikeLayerSlice>,
+        container_size: Size,
     ) -> Point {
         let scaled_glyph_metrics = scaled_metrics_for_codepoint(font, font_size, ch);
         let mut cursor_pos = cursor_pos;
-        if ch == '\n' || cursor_pos.x + (font_size.width * 2) >= onto.frame().width() {
+        if ch == '\n' || cursor_pos.x + (font_size.width * 2) >= container_size.width {
             cursor_pos.x = 0;
             cursor_pos.y += font.scaled_line_height(font_size);
         } else {
@@ -250,7 +250,7 @@ impl TextView {
             //todo!("re-enable, disabled just while checking if this code path is hit");
             // If we just inserted a newline, we need to adjust our cursor position
             let mut cursor_point =
-                Self::next_cursor_pos_for_char(cursor_pos.1, ch, &font, font_size, onto);
+                Self::next_cursor_pos_for_char(cursor_pos.1, ch, &font, font_size, onto.frame().size);
             //println!("Base cursor for later chars: {cursor_point}");
             for drawn_ch in text[cursor_pos.0..].iter_mut() {
                 //println!("\tFound later {}, originally placed at {}", drawn_ch.value, drawn_ch.pos);
@@ -267,7 +267,7 @@ impl TextView {
                     drawn_ch.value,
                     &font,
                     font_size,
-                    onto,
+                    onto.frame().size,
                 );
             }
         }
@@ -289,7 +289,7 @@ impl TextView {
             //println!("Inserting at {insertion_point}: {draw_desc:?}");
             text.insert(insertion_point, draw_desc);
         }
-        *cursor_point = Self::next_cursor_pos_for_char(*cursor_point, ch, &font, font_size, onto);
+        *cursor_point = Self::next_cursor_pos_for_char(*cursor_point, ch, &font, font_size, onto.frame().size);
         //Bordered::draw(self)
     }
 
@@ -331,7 +331,7 @@ impl TextView {
                 prev.value,
                 &self.font,
                 prev.font_size,
-                onto,
+                onto.frame().size,
             );
         }
 
@@ -360,7 +360,7 @@ impl TextView {
                             next_ch.value,
                             &self.font,
                             next_ch.font_size,
-                            onto,
+                            onto.frame().size,
                         );
                         next_cursor_pos = next_ch.pos;
                         //println!("{}", next_ch.pos);
