@@ -30,6 +30,8 @@ pub fn render_char_onto(
     render_glyph_onto(glyph, font, onto, draw_loc, draw_color, font_size)
 }
 
+/// Note that this implementation does not respect the need to split onto newlines due to the size
+/// of the parent container.
 pub fn rendered_string_size(s: &str, font: &Font, font_size: Size) -> Size {
     let scale_factor = font_size.height as f64 / font.units_per_em as f64;
     let mut bounding_box = Size::new(
@@ -68,9 +70,9 @@ pub fn render_antialiased_glyph_onto(
     let scaled_glyph_metrics = glyph.metrics().scale(scale_x, scale_y);
     let draw_loc = draw_loc
         + Point::new(
-            scaled_glyph_metrics.left_side_bearing,
-            scaled_glyph_metrics.top_side_bearing,
-        );
+        scaled_glyph_metrics.left_side_bearing,
+        scaled_glyph_metrics.top_side_bearing,
+    );
     let draw_box = Rect::from_parts(draw_loc, font_size);
     let mut dest_slice = onto.get_slice(draw_box);
 

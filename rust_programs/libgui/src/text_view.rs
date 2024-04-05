@@ -19,6 +19,7 @@ use alloc::{
 };
 use axle_rt::AmcMessage;
 use core::fmt::Formatter;
+use core::ops::Add;
 use core::ptr;
 use file_manager_messages::{ReadFile, ReadFileResponse, FILE_SERVER_SERVICE_NAME};
 use libgui_derive::{Drawable, NestedLayerSlice, UIElement};
@@ -178,6 +179,34 @@ impl TextView {
             cursor_pos.x += scaled_glyph_metrics.advance_width as isize;
         }
         cursor_pos
+    }
+
+    /// Note that this will respect the need to split onto newlines due to the size of the parent slice.
+    pub fn rendered_string_size(
+        s: &str,
+        font: &Font,
+        font_size: Size,
+        container_size: Size,
+        text_origin: Point,
+    ) -> Size {
+        // Pretend we're doing layout and keep track of the area we cross
+        let mut layout_size = Size::new(0, font.scaled_line_height(font_size));
+        let mut cursor_pos = text_origin;
+        for ch in s.chars() {
+            let next_cursor_pos = Self::next_cursor_pos_for_char(
+                cursor_pos,
+                ch,
+                font,
+                font_size,
+                container_size,
+            );
+            layout_size = layout_size + Size::new(
+                next_cursor_pos.x - cursor_pos.x,
+                next_cursor_pos.y - cursor_pos.y,
+            );
+            cursor_pos = next_cursor_pos;
+        }
+        layout_size
     }
 
     pub fn cursor_pos(&self) -> CursorPos {
