@@ -117,6 +117,13 @@ impl AwmWindow {
     }
 
     pub fn handle_mouse_left_click_down(&self, mouse_pos: Point) {
+        let elems = &*self.ui_elements.borrow();
+        for elem in elems {
+            let mouse_point = Point::from(mouse_pos);
+            let elem_pos = mouse_point - elem.frame().origin;
+            elem.handle_left_click(elem_pos);
+        }
+        /*
         let mut clicked_elem = None;
         {
             let elems = &*self.ui_elements.borrow();
@@ -132,12 +139,19 @@ impl AwmWindow {
             // Translate the mouse position to the element's coordinate system
             let mouse_point = Point::from(mouse_pos);
             let elem_pos = mouse_point - c.frame().origin;
-            c.handle_left_click(elem_pos);
         }
+        */
     }
 
-    pub fn handle_mouse_left_click_up(&self, mouse_pos: Point) {
-        // Nothing to do
+    pub fn handle_mouse_left_click_up(&self, mouse_point: Point) {
+        // Note that we send this event to all elements, regardless of whether they bound the mouse
+        // when it's released. This helps to implement drag states where the element stays dragged
+        // even if the mouse leaves the element's frame.
+        for elem in self.ui_elements.borrow().iter() {
+            // Translate the mouse position to the element's coordinate system
+            let elem_pos = mouse_point - elem.frame().origin;
+            elem.handle_left_click_up(elem_pos);
+        }
     }
 }
 
